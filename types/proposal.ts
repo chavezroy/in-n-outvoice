@@ -11,6 +11,14 @@ export interface Proposal {
   status: ProposalStatus;
   createdAt: Date;
   updatedAt: Date;
+  // PDF export settings
+  orientation?: "portrait" | "landscape";
+  // Title page styling
+  titlePageStyle?: {
+    theme: "light" | "dark";
+    layout: "centered" | "left-aligned" | "split";
+    logoUrl?: string; // Base64 encoded logo image
+  };
 }
 
 export interface ProposalSection {

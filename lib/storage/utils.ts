@@ -104,3 +104,54 @@ export function clearAllStorage(): void {
   });
 }
 
+/**
+ * SessionStorage utility functions
+ * Used for temporary session-specific data (like view preferences)
+ */
+
+/**
+ * Get item from sessionStorage with error handling
+ */
+export function getSessionItem<T>(key: string): T | null {
+  if (typeof window === "undefined") return null;
+  
+  try {
+    const item = sessionStorage.getItem(key);
+    if (!item) return null;
+    return JSON.parse(item) as T;
+  } catch (error) {
+    console.error(`Error reading from sessionStorage (${key}):`, error);
+    return null;
+  }
+}
+
+/**
+ * Set item in sessionStorage with error handling
+ */
+export function setSessionItem<T>(key: string, value: T): boolean {
+  if (typeof window === "undefined") return false;
+  
+  try {
+    sessionStorage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch (error) {
+    console.error(`Error writing to sessionStorage (${key}):`, error);
+    return false;
+  }
+}
+
+/**
+ * Remove item from sessionStorage
+ */
+export function removeSessionItem(key: string): boolean {
+  if (typeof window === "undefined") return false;
+  
+  try {
+    sessionStorage.removeItem(key);
+    return true;
+  } catch (error) {
+    console.error(`Error removing from sessionStorage (${key}):`, error);
+    return false;
+  }
+}
+

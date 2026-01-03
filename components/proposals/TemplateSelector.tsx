@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Search, Grid, List, Eye } from "lucide-react";
+import { Search, Grid, List, Eye, CheckCircle } from "lucide-react";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import Input from "@/components/ui/Input";
+import Modal from "@/components/ui/Modal";
 import { Template, TemplateCategory } from "@/types/template";
 
 interface TemplateSelectorProps {
@@ -205,6 +206,94 @@ export default function TemplateSelector({
         <div className="text-center py-12 text-neutral-500 dark:text-neutral-400">
           <p>No templates found matching your criteria.</p>
         </div>
+      )}
+
+      {/* Template Preview Modal */}
+      {previewTemplate && (
+        <Modal
+          isOpen={!!previewTemplate}
+          onClose={() => setPreviewTemplate(null)}
+          title={previewTemplate.name}
+          size="xl"
+        >
+          <div className="space-y-6">
+            {/* Template Info */}
+            <div>
+              <div className="flex items-center gap-3 mb-3">
+                <span className="px-3 py-1 text-sm font-medium bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-full">
+                  {previewTemplate.category.charAt(0).toUpperCase() + previewTemplate.category.slice(1)}
+                </span>
+                {previewTemplate.isPremium && (
+                  <span className="px-3 py-1 text-sm font-medium bg-secondary-100 dark:bg-secondary-900 text-secondary-700 dark:text-secondary-300 rounded-full">
+                    Premium
+                  </span>
+                )}
+              </div>
+              <p className="text-neutral-700 dark:text-neutral-300">
+                {previewTemplate.description}
+              </p>
+            </div>
+
+            {/* Template Sections */}
+            <div>
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
+                Template Sections ({previewTemplate.sections.length})
+              </h3>
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {previewTemplate.sections
+                  .sort((a, b) => a.order - b.order)
+                  .map((section, index) => (
+                    <Card key={section.id} className="p-4">
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-sm font-semibold text-primary-700 dark:text-primary-300">
+                          {index + 1}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-semibold text-neutral-900 dark:text-neutral-100">
+                              {section.title}
+                            </h4>
+                            {section.isRequired && (
+                              <span className="text-xs text-error-600 dark:text-error-400">
+                                Required
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-2">
+                            Type: {section.type}
+                          </p>
+                          {section.defaultContent && (
+                            <p className="text-sm text-neutral-600 dark:text-neutral-400 whitespace-pre-wrap bg-neutral-50 dark:bg-neutral-800/50 p-3 rounded-lg">
+                              {section.defaultContent}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex justify-end gap-3 pt-4 border-t border-neutral-200 dark:border-neutral-800">
+              <Button
+                variant="outline"
+                onClick={() => setPreviewTemplate(null)}
+              >
+                Close
+              </Button>
+              <Button
+                variant="primary"
+                onClick={() => {
+                  onSelectTemplate(previewTemplate);
+                  setPreviewTemplate(null);
+                }}
+              >
+                Use This Template
+              </Button>
+            </div>
+          </div>
+        </Modal>
       )}
     </div>
   );
