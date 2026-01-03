@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { FileText, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import Button from "@/components/ui/Button";
 import { ROUTES } from "@/lib/constants";
@@ -30,7 +31,13 @@ export default function Header() {
               whileHover={{ rotate: 360 }}
               transition={{ duration: 0.5 }}
             >
-              <FileText className="h-6 w-6 text-primary-600" />
+              <Image
+                src="/innoutvoice-lco.svg"
+                alt="In-N-OutVoice Logo"
+                width={24}
+                height={24}
+                className="h-6 w-6"
+              />
             </motion.div>
             <span className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
               In-N-OutVoice

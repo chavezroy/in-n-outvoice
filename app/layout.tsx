@@ -14,6 +14,13 @@ export const metadata: Metadata = {
   title: "In-N-OutVoice - Professional Proposal Generator",
   description:
     "Create professional proposals quickly with our custom template generator. Perfect for self-employed professionals and small businesses.",
+  icons: {
+    icon: [
+      { url: "/innoutvoice-lco.png", sizes: "any" },
+    ],
+    shortcut: "/innoutvoice-lco.png",
+    apple: "/innoutvoice-lco.png",
+  },
 };
 
 export default function RootLayout({
