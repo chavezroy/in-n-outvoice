@@ -90,6 +90,10 @@ export default function TitlePage({ proposal }: TitlePageProps) {
                   src={style.logoUrl}
                   alt="Company Logo"
                   className="h-12 w-auto object-contain opacity-80"
+                  onError={(e) => {
+                    console.error("Failed to load logo:", style.logoUrl);
+                    (e.target as HTMLImageElement).style.display = "none";
+                  }}
                 />
               )}
               <p className="text-sm">Proposal Document</p>
@@ -178,6 +182,10 @@ export default function TitlePage({ proposal }: TitlePageProps) {
               src={style.logoUrl}
               alt="Company Logo"
               className="h-12 w-auto object-contain opacity-80"
+              onError={(e) => {
+                console.error("Failed to load logo:", style.logoUrl);
+                (e.target as HTMLImageElement).style.display = "none";
+              }}
             />
           </div>
         )}

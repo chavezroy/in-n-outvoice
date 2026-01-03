@@ -323,6 +323,142 @@ function renderPricingSection(
  * Export a proposal as a PDF file using text rendering
  * This produces much smaller files and better quality for text content
  */
+/**
+ * Render the title page with custom styling
+ */
+function renderTitlePage(
+  pdf: jsPDF,
+  proposal: Proposal,
+  pageWidth: number,
+  pageHeight: number,
+  margin: number
+): void {
+  const style = proposal.titlePageStyle || {
+    theme: "light",
+    layout: "centered",
+  };
+
+  const isDark = style.theme === "dark";
+  const isCentered = style.layout === "centered";
+  const isLeftAligned = style.layout === "left-aligned";
+  const isSplit = style.layout === "split";
+
+  // Set background color
+  if (isDark) {
+    pdf.setFillColor(23, 23, 23); // neutral-900
+    pdf.rect(0, 0, pageWidth, pageHeight, "F");
+  } else {
+    pdf.setFillColor(255, 255, 255); // white
+    pdf.rect(0, 0, pageWidth, pageHeight, "F");
+  }
+
+  const centerX = pageWidth / 2;
+  const centerY = pageHeight / 2;
+  const maxWidth = pageWidth - (margin * 2);
+  const lineHeight = 7;
+
+  // Format date
+  const dateStr = new Date(proposal.createdAt).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
+  if (isSplit) {
+    // Split Layout: Title at top, logo and footer at bottom
+    let yPos = margin + 40;
+    
+    // Title
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(36);
+    pdf.setTextColor(isDark ? 255 : 0, isDark ? 255 : 0, isDark ? 255 : 0);
+    const titleLines = pdf.splitTextToSize(proposal.title, maxWidth);
+    titleLines.forEach((line: string) => {
+      pdf.text(line, margin, yPos);
+      yPos += lineHeight * 1.2;
+    });
+
+    // Date
+    yPos += lineHeight;
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(14);
+    pdf.setTextColor(isDark ? 200 : 100, isDark ? 200 : 100, isDark ? 200 : 100);
+    pdf.text(dateStr, margin, yPos);
+
+    // Footer with logo and text
+    yPos = pageHeight - margin - 30;
+    if (style.logoUrl) {
+      // Note: jsPDF doesn't support base64 images directly in all versions
+      // For now, we'll skip the logo in PDF and just show text
+      yPos -= 15;
+    }
+    pdf.setDrawColor(isDark ? 100 : 200, isDark ? 100 : 200, isDark ? 100 : 200);
+    pdf.setLineWidth(0.5);
+    pdf.line(margin, yPos - 10, pageWidth - margin, yPos - 10);
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(10);
+    pdf.setTextColor(isDark ? 150 : 120, isDark ? 150 : 120, isDark ? 150 : 120);
+    pdf.text("Proposal Document", centerX, yPos, { align: "center" });
+  } else if (isLeftAligned) {
+    // Left-Aligned Layout
+    let yPos = centerY - 30;
+    
+    // Accent bar
+    pdf.setFillColor(37, 99, 235); // Primary blue
+    pdf.rect(margin, yPos - 5, 16, 2, "F");
+
+    // Title
+    yPos += 20;
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(36);
+    pdf.setTextColor(isDark ? 255 : 0, isDark ? 255 : 0, isDark ? 255 : 0);
+    const titleLines = pdf.splitTextToSize(proposal.title, maxWidth);
+    titleLines.forEach((line: string) => {
+      pdf.text(line, margin, yPos);
+      yPos += lineHeight * 1.2;
+    });
+
+    // Date
+    yPos += lineHeight;
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(14);
+    pdf.setTextColor(isDark ? 200 : 100, isDark ? 200 : 100, isDark ? 200 : 100);
+    pdf.text(dateStr, margin, yPos);
+
+    // Logo at bottom
+    if (style.logoUrl) {
+      // Logo would go here if we had image support
+    }
+  } else {
+    // Centered Layout (Default)
+    let yPos = centerY - 40;
+
+    // Title
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(42);
+    pdf.setTextColor(isDark ? 255 : 0, isDark ? 255 : 0, isDark ? 255 : 0);
+    const titleLines = pdf.splitTextToSize(proposal.title, maxWidth);
+    titleLines.forEach((line: string) => {
+      pdf.text(line, centerX, yPos, { align: "center" });
+      yPos += lineHeight * 1.3;
+    });
+
+    // Date
+    yPos += lineHeight;
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(16);
+    pdf.setTextColor(isDark ? 200 : 100, isDark ? 200 : 100, isDark ? 200 : 100);
+    pdf.text(dateStr, centerX, yPos, { align: "center" });
+
+    // Logo at bottom
+    if (style.logoUrl) {
+      // Logo would go here if we had image support
+      yPos = pageHeight - margin - 20;
+      // For now, we'll just leave space
+    }
+  }
+}
+
 export async function exportProposalToPDF(
   proposal: Proposal,
   options: PDFExportOptions = {}
@@ -330,7 +466,7 @@ export async function exportProposalToPDF(
   const {
     filename = `${proposal.title || "proposal"}.pdf`,
     format = "A4",
-    orientation = "portrait",
+    orientation = proposal.orientation || "portrait",
   } = options;
 
   try {
@@ -348,58 +484,51 @@ export async function exportProposalToPDF(
     const margin = 20; // 20mm margins
     const maxWidth = pageWidth - (margin * 2);
     const lineHeight = 7; // Line height in mm
-    const sectionSpacing = 10; // Space between sections
 
-    let yPosition = margin;
+    // Render Title Page
+    renderTitlePage(pdf, proposal, pageWidth, pageHeight, margin);
+
+    // Add new page for sections
+    pdf.addPage();
 
     // Helper function to check if we need a new page
     const checkPageBreak = (requiredHeight: number) => {
+      let yPosition = margin;
       if (yPosition + requiredHeight > pageHeight - margin) {
         pdf.addPage();
-        yPosition = margin;
         return true;
       }
       return false;
     };
 
-    // Add title
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(24);
-    
-    // Primary color (blue) - using grayscale approximation
-    // #1e3a8a (RGB: 30, 58, 138) -> dark gray
-    pdf.setTextColor(30, 58, 138);
-    
-    const titleLines = pdf.splitTextToSize(proposal.title, maxWidth);
-    titleLines.forEach((line: string) => {
-      checkPageBreak(lineHeight * 1.5);
-      pdf.text(line, margin, yPosition);
-      yPosition += lineHeight * 1.5;
-    });
-
-    // Add line under title
-    yPosition += 5;
-    pdf.setDrawColor(37, 99, 235); // Primary blue
-    pdf.setLineWidth(0.5);
-    pdf.line(margin, yPosition, pageWidth - margin, yPosition);
-    yPosition += sectionSpacing;
-
-    // Add sections
+    // Add sections - each section starts on a new page
     proposal.sections.forEach((section, index) => {
-      // Add spacing before section (except first)
+      // Start each section on a new page (except first which already has a page)
       if (index > 0) {
-        yPosition += sectionSpacing;
+        pdf.addPage();
       }
 
+      // Reset to top of page
+      let yPosition = margin;
+
+      // Helper function to check if we need a new page (with current yPosition)
+      const checkPageBreakForSection = (requiredHeight: number) => {
+        if (yPosition + requiredHeight > pageHeight - margin) {
+          pdf.addPage();
+          yPosition = margin;
+          return true;
+        }
+        return false;
+      };
+
       // Section title
-      checkPageBreak(lineHeight * 2);
       pdf.setFont("helvetica", "bold");
       pdf.setFontSize(18);
       pdf.setTextColor(30, 58, 138); // Primary blue
       
       const sectionTitleLines = pdf.splitTextToSize(section.title, maxWidth);
       sectionTitleLines.forEach((line: string) => {
-        checkPageBreak(lineHeight * 1.5);
+        checkPageBreakForSection(lineHeight * 1.5);
         pdf.text(line, margin, yPosition);
         yPosition += lineHeight * 1.5;
       });
@@ -413,7 +542,7 @@ export async function exportProposalToPDF(
           maxWidth,
           pageHeight,
           section.pricingData,
-          checkPageBreak,
+          checkPageBreakForSection,
           lineHeight
         );
       } else {
@@ -463,7 +592,7 @@ export async function exportProposalToPDF(
               // Split long lines to fit page width
               const textLines = pdf.splitTextToSize(line.trim(), maxWidth);
               textLines.forEach((textLine: string) => {
-                checkPageBreak(lineHeight);
+                checkPageBreakForSection(lineHeight);
                 pdf.text(textLine, margin, yPosition);
                 yPosition += lineHeight;
               });
@@ -480,7 +609,7 @@ export async function exportProposalToPDF(
             const contentLines = pdf.splitTextToSize(content, maxWidth);
 
             contentLines.forEach((line: string) => {
-              checkPageBreak(lineHeight);
+              checkPageBreakForSection(lineHeight);
               pdf.text(line, margin, yPosition);
               yPosition += lineHeight;
             });
@@ -489,7 +618,7 @@ export async function exportProposalToPDF(
           // Empty section placeholder
           pdf.setFont("helvetica", "italic");
           pdf.setTextColor(128, 128, 128); // Gray
-          checkPageBreak(lineHeight);
+          checkPageBreakForSection(lineHeight);
           pdf.text("(No content)", margin, yPosition);
           yPosition += lineHeight;
           pdf.setFont("helvetica", "normal");
